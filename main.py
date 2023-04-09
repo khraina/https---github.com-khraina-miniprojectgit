@@ -71,6 +71,8 @@ def views():
 def logins():
   return render_template('logins.html',boolean=True)
 
+@app.route("/sign_up",methods=['GET','POST'])
+
 
 
 
