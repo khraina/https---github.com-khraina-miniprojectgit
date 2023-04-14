@@ -1,62 +1,42 @@
 from flask import Flask,render_template,request,session,redirect,url_for,g,flash
-
-
-
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin
+from flask_wtf import FlaskForm
+from wtforms import FileField,SubmitField,FormField
+from werkzeug.utils import secure_filename
+import os
 
 app = Flask(__name__)
 app.secret_key = 'somesecretkeythatonlyishouldknow'
+app.config['SECRET_KEY'] = 'thisisasecretkey'
+
+class UploadFileForm(FlaskForm):
+  file = FileField("File");
+  submit = SubmitField("Upload file");
+  
 
 
-class User:
-    def __init__(self, id, username, password):
-        self.id = id
-        self.username = username
-        self.password = password
-    
-    def __repr__(self):
-        return f'<User: {self.username}>'
 
-
-users = []
-users.append(User(id=1, username='RAINA', password='123'))
-users.append(User(id=2, username='Soumya', password='123'))
 
 @app.route("/")
 def home():
   return render_template('home.html')
 
-@app.before_request
-def before_request():
-    g.user = None
 
-    if 'user_id' in session:
-        user = [x for x in users if x.id == session['user_id']][0]
-        g.user = user
 
       
 @app.route("/login", methods=['GET', 'POST'])
 def login():
-  if request.method == 'POST':
-        session.pop('user_id', None)
-
-        username = request.form['username']
-        password = request.form['password']
-        
-        user = [x for x in users if x.username == username][0]
-        if user and user.password == password:
-            session['user_id'] = user.id
-            return redirect(url_for('profile'))
-
-        return redirect(url_for('login'))
-
   return render_template('login.html')
-
-@app.route('/profile')
+  
+@app.route("/profile" , methods=['GET', 'POST'])
 def profile():
-    if not g.user:
-        return redirect(url_for('login'))
-
-    return render_template('profile.html')
+  form = UploadFileForm()
+  if form.validate_on_submit():
+        file = form.file.data # First grab the file
+        file.save(os.path.join(os.path.abspath(os.path.dirname(__file__)),app.config['UPLOAD_FOLDER'],secure_filename(file.filename))) # Then save the file
+        flash('File has been uploaded.','success')
+  return render_template('profile.html',form=form)
 
 
 @app.route("/about_us")
@@ -69,23 +49,9 @@ def views():
 
 @app.route("/logins",methods=['GET','POST'])
 def logins():
+  email = None
   return render_template('logins.html',boolean=True)
 
-@app.route("/sign_up",methods=['GET','POST'])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-if __name__ == '__main__':
-    app.run(debug=True)
+      
+if __name__ == "__main__":
+  app.run(host="0.0.0.0", debug=True)
